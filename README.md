@@ -4,7 +4,7 @@ An advanced implementation of the Model Context Protocol (MCP) with comprehensiv
 
 ## 🌟 Overview
 
-This project provides a production-ready MCP server with advanced capabilities, built by **AdilzhanB** on **2025-06-17 04:41:53 UTC**. It demonstrates the full potential of the Model Context Protocol through practical implementations and real-world use cases.
+This project provides a production-ready MCP server with advanced capabilities, built by **AdilzhanB**. It demonstrates the full potential of the Model Context Protocol through practical implementations and real-world use cases.
 
 ### Key Features
 
