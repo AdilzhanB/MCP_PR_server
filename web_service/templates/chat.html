@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Advanced Interface - {{ user_login }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-container {
+            width: 95%;
+            max-width: 1400px;
+            height: 95vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .chat-header .info {
+            font-size: 1rem;
+            opacity: 0.95;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .server-info {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            position: relative;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            border-radius: 15px;
+            max-width: 85%;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+
+        .message.system {
+            background: linear-gradient(135deg, #e9ecef, #f1f3f4);
+            color: #495057;
+            border-left: 5px solid #007bff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .message.error {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+            box-shadow: 0 2px 8px rgba(220,53,69,0.2);
+        }
+
+        .message.help {
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+            color: #0c5460;
+            border-left: 5px solid #17a2b8;
+            box-shadow: 0 2px 8px rgba(23,162,184,0.2);
+        }
+
+        .message.analysis {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border-left: 5px solid #28a745;
+            box-shadow: 0 2px 8px rgba(40,167,69,0.2);
+        }
+
+        .message.workflow {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border-left: 5px solid #ffc107;
+            box-shadow: 0 2px 8px rgba(255,193,7,0.2);
+        }
+
+        .message.notification {
+            background: linear-gradient(135deg, #e2e3e5, #d6d8db);
+            color: #383d41;
+            border-left: 5px solid #6c757d;
+            box-shadow: 0 2px 8px rgba(108,117,125,0.2);
+        }
+
+        .message-meta {
+            font-size: 0.85rem;
+            opacity: 0.75;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        .chat-input {
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            background: white;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .quick-commands {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .quick-cmd {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #e9ecef, #f8f9fa);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .quick-cmd:hover {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .chat-input input:focus {
+            border-color: #007bff;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .chat-input button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .chat-input button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+        }
+
+        .chat-input button:disabled {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+            font-size: 0.95rem;
+            color: #6c757d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status.connected {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status.connected .status-indicator {
+            background: #28a745;
+        }
+
+        .status.disconnected .status-indicator {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Code blocks and formatting */
+        .message pre {
+            background: rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 12px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .message code {
+            background: rgba(0,0,0,0.1);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .message strong {
+            font-weight: 600;
+        }
+
+        .message em {
+            font-style: italic;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,123,255,0.3);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .message {
+                max-width: 95%;
+            }
+
+            .quick-commands {
+                justify-content: center;
+            }
+
+            .chat-header .info {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .input-row {
+                flex-direction: column;
+            }
+
+            .chat-input button {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
+
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🚀 MCP Advanced Interface</h1>
+            <div class="info">
+                <span>👤 User: <strong>{{ user_login }}</strong></span>
+                <span class="server-info">{{ server_name }} v{{ version }}</span>
+                <span>📅 {{ current_time }} UTC</span>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="messages">
+            <!-- Messages will be inserted here -->
+        </div>
+
+        <div class="chat-input">
+            <div class="quick-commands">
+                <button class="quick-cmd" onclick="sendQuickCommand('help')">📋 Help</button>
+                <button class="quick-cmd" onclick="sendQuickCommand('status')">📊 Status</button>
+                <button class="quick-cmd" onclick="sendQuickCommand('tools')">🔧 Tools</button>
+                <button class="quick-cmd" onclick="sendQuickCommand('analyze basic sample')">📈 Sample Analysis</button>
+                <button class="quick-cmd" onclick="sendQuickCommand('workflow sample')">🔄 Sample Workflow</button>
+                <button class="quick-cmd" onclick="sendQuickCommand('resource data://analytics/dashboard')">📁 Analytics</button>
+                <button class="quick-cmd" onclick="sendQuickCommand('sample commands')">🎯 Examples</button>
+            </div>
+            <div class="input-row">
+                <input type="text" id="messageInput" placeholder="Type a command... (e.g., 'help', 'analyze basic 1,2,3', 'notify slack #alerts message')" onkeypress="handleKeyPress(event)">
+                <button id="sendButton" onclick="sendMessage()">
+                    <span id="sendText">Send</span>
+                    <span id="loadingSpinner" class="loading" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="status" id="status">
+            <span><span class="status-indicator"></span>Connecting to MCP server...</span>
+            <span id="connectionInfo"></span>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let isConnected = false;
+        let messageCount = 0;
+
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            console.log('Connecting to:', wsUrl);
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = function(event) {
+                console.log('Connected to MCP server');
+                isConnected = true;
+                updateStatus('Connected to MCP server', 'connected');
+                document.getElementById('sendButton').disabled = false;
+                
+                // Update connection info
+                document.getElementById('connectionInfo').textContent = `Messages: ${messageCount}`;
+            };
+
+            socket.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                displayMessage(message);
+                messageCount++;
+                document.getElementById('connectionInfo').textContent = `Messages: ${messageCount}`;
+            };
+
+            socket.onclose = function(event) {
+                console.log('Disconnected from MCP server');
+                isConnected = false;
+                updateStatus('Disconnected from MCP server - Reconnecting...', 'disconnected');
+                document.getElementById('sendButton').disabled = true;
+                
+                // Attempt to reconnect after 3 seconds
+                setTimeout(connect, 3000);
+            };
+
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                updateStatus('Connection error - Retrying...', 'disconnected');
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message && isConnected) {
+                // Show loading state
+                setLoading(true);
+                
+                const messageData = {
+                    message: message,
+                    user: '{{ user_login }}',
+                    timestamp: new Date().toISOString()
+                };
+
+                // Display user message
+                displayMessage({
+                    type: 'user',
+                    message: message,
+                    user: '{{ user_login }}',
+                    timestamp: new Date().toISOString()
+                });
+
+                // Send to server
+                socket.send(JSON.stringify(messageData));
+                input.value = '';
+                
+                // Reset loading state after response
+                setTimeout(() => setLoading(false), 1000);
+            }
+        }
+
+        function sendQuickCommand(command) {
+            document.getElementById('messageInput').value = command;
+            sendMessage();
+        }
+
+        function setLoading(loading) {
+            const sendText = document.getElementById('sendText');
+            const spinner = document.getElementById('loadingSpinner');
+            const button = document.getElementById('sendButton');
+            
+            if (loading) {
+                sendText.style.display = 'none';
+                spinner.style.display = 'inline-block';
+                button.disabled = true;
+            } else {
+                sendText.style.display = 'inline';
+                spinner.style.display = 'none';
+                button.disabled = !isConnected;
+            }
+        }
+
+        function displayMessage(messageData) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            
+            messageDiv.className = `message ${messageData.type}`;
+            
+            // Format message content (enhanced markdown-like formatting)
+            let content = messageData.message;
+            
+            // Format code blocks
+            content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+            content = content.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            
+            // Format inline code
+            content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Format bold text
+            content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Format italic text
+            content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Format line breaks
+            content = content.replace(/\n/g, '<br>');
+            
+            // Format lists
+            content = content.replace(/^• (.*$)/gm, '<li>$1</li>');
+            content = content.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+            
+            const timestamp = new Date(messageData.timestamp).toLocaleTimeString();
+            const typeEmoji = getTypeEmoji(messageData.type);
+            
+            messageDiv.innerHTML = `
+                <div>${content}</div>
+                <div class="message-meta">${typeEmoji} ${messageData.user} • ${timestamp}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Add subtle animation
+            messageDiv.style.opacity = '0';
+            messageDiv.style.transform = 'translateY(10px)';
+            
+            setTimeout(() => {
+                messageDiv.style.transition = 'all 0.3s ease-out';
+                messageDiv.style.opacity = '1';
+                messageDiv.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function getTypeEmoji(type) {
+            const emojis = {
+                'user': '👤',
+                'system': '🤖',
+                'error': '❌',
+                'help': '📋',
+                'analysis': '📈',
+                'workflow': '🔄',
+                'notification': '📢',
+                'resource': '📁',
+                'tools': '🔧',
+                'status': '📊',
+                'sample': '🎯'
+            };
+            return emojis[type] || '💬';
+        }
+
+        function updateStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            const indicator = statusElement.querySelector('.status-indicator');
+            
+            statusElement.className = `status ${type}`;
+            statusElement.querySelector('span').innerHTML = `<span class="status-indicator"></span>${message}`;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Initialize connection and setup
+        document.addEventListener('DOMContentLoaded', function() {
+            connect();
+            document.getElementById('messageInput').focus();
+            
+            // Add some initial styling
+            document.getElementById('sendButton').disabled = true;
+            
+            console.log('MCP Advanced Interface initialized');
+            console.log('User: {{ user_login }}');
+            console.log('Time: {{ current_time }}');
+        });
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible' && !isConnected) {
+                connect();
+            }
+        });
+
+        // Auto-resize input on mobile
+        window.addEventListener('resize', function() {
+            const input = document.getElementById('messageInput');
+            if (window.innerWidth < 768) {
+                input.style.fontSize = '16px'; // Prevent zoom on iOS
+            }
+        });
+    </script>
+</body>
+</html>
